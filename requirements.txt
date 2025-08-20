@@ -4,3 +4,5 @@ PyJWT==2.9.0
 Werkzeug==3.0.3
 python-dotenv==1.0.1
 google-auth==2.35.0
+flask-cors==4.0.0
+gunicorn==21.2.0

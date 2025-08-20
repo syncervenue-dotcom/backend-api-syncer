@@ -22,6 +22,7 @@ try:
 except Exception:
     GOOGLE_LIBS_AVAILABLE = False
 
+from flask_cors import CORS
 
 
 # -------------------- Config --------------------
@@ -49,6 +50,7 @@ CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 CLOUDINARY_UPLOAD_PRESET = os.getenv("CLOUDINARY_UPLOAD_PRESET")
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:5173", "https://your-frontend-domain.com"])
 
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = client["halls_db"]
@@ -837,22 +839,22 @@ def create_booking():
     {
       "venue_id": "<venue_id>",
       "date": "2025-09-01",
-      "guests_count": 300,
+      "guests": 300,
       "notes": "optional"
     }
     """
     b = request.get_json(silent=True) or {}
     venue_id = b.get("venue_id")
     date_str = b.get("date")
-    guests = b.get("guests_count")
+    guests = b.get("guests")
 
     if not venue_id or not date_str or guests is None:
-        return err("Fields 'venue_id', 'date', 'guests_count' are required.", 422)
+        return err("Fields 'venue_id', 'date', 'guests' are required.", 422)
     try:
         guests = int(guests); 
         if guests <= 0: raise ValueError()
     except Exception:
-        return err("'guests_count' must be a positive integer.", 422)
+        return err("'guests' must be a positive integer.", 422)
 
     try:
         v = venues.find_one({"_id": ObjectId(venue_id)})
@@ -878,8 +880,8 @@ def create_booking():
         "venue_id": v["_id"],
         "user_id": request.user["_id"],
         "date": date_str,
-        "guests_count": guests,
-        "price": price,
+        "guests": guests,
+        "price_locked": price,
         "status": "pending",
         "notes": b.get("notes", ""),
         "created_at": datetime.utcnow(),
@@ -899,8 +901,8 @@ def my_bookings():
             "id": str(bk["_id"]),
             "venue_id": str(bk["venue_id"]),
             "date": bk["date"],
-            "guests_count": bk.get("guests_count"),
-            "price": bk.get("price"),
+            "guests": bk.get("guests"),
+            "price_locked": bk.get("price_locked"),
             "status": bk.get("status"),
             "notes": bk.get("notes", "")
         })
@@ -923,8 +925,8 @@ def bookings_for_owner():
             "venue_id": str(bk["venue_id"]),
             "user_id": str(bk["user_id"]),
             "date": bk["date"],
-            "guests_count": bk.get("guests_count"),
-            "price": bk.get("price"),
+            "guests": bk.get("guests"),
+            "price_locked": bk.get("price_locked"),
             "status": bk.get("status"),
             "notes": bk.get("notes", "")
         })
@@ -970,8 +972,8 @@ def update_booking(booking_id):
             "venue_id": str(bk2["venue_id"]),
             "user_id": str(bk2["user_id"]),
             "date": bk2["date"],
-            "guests_count": bk2["guests_count"],
-            "price": bk2.get("price"),
+            "guests": bk2["guests"],
+            "price_locked": bk2.get("price_locked"),
             "status": bk2["status"],
             "notes": bk2.get("notes", "")
         }
